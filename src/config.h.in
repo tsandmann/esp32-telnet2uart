@@ -1,0 +1,9 @@
+#pragma once
+
+static const char* ssid = "YOUR_SSID"; // FIXME: put your wifi SSID here
+static const char* password = "YOUR_PASSWORD"; // FIXME: put your wifi password here
+
+static constexpr uint32_t UART_BAUDRATE { 2000000 }; // baud rate to use for uart
+static constexpr uint8_t MAX_SRV_CLIENTS { 2 }; // how many clients should be able to telnet to this ESP8266
+static constexpr size_t BUFFER_SIZE { 2048 };
+static constexpr uint32_t TELNET_DISCARD_TIME { 1000 }; // period of time in ms (after connection setup during) which any telnet protocol traffic is discarded
