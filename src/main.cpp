@@ -37,8 +37,8 @@ static uint32_t connection_time[MAX_SRV_CLIENTS];
 
 static HardwareSerial Serial0 { 0 };
 static HardwareSerial Serial2 { 2 };
-static uint8_t serial_rx_buf[512];
-static uint8_t serial_tx_buf[512];
+static uint8_t serial_rx_buf[BUFFER_SIZE];
+static uint8_t serial_tx_buf[BUFFER_SIZE];
 
 void setup() {
     Serial0.begin(115200);
@@ -49,7 +49,7 @@ void setup() {
     Serial0.print("WiFi status=");
     Serial0.println(wifi_status, 10);
 
-    for (uint8_t i { 0 }; WiFi.status() != WL_CONNECTED && i < 30; ++i) {
+    for (uint8_t i { 0 }; WiFi.status() != WL_CONNECTED && i < 20; ++i) {
         Serial0.print("WiFi not connected... (");
         Serial0.print(i, 10);
         Serial0.print(") status=");
@@ -61,7 +61,7 @@ void setup() {
 
             ::esp_sleep_enable_timer_wakeup(500000ULL);
             ::esp_light_sleep_start();
-            esp_restart();
+            ::esp_restart();
         }
         ::delay(500);
     }
@@ -72,7 +72,7 @@ void setup() {
         while (true) {
             ::esp_sleep_enable_timer_wakeup(1000000ULL);
             ::esp_light_sleep_start();
-            esp_restart();
+            ::esp_restart();
         }
     }
     // WiFi.setSleep(false);
@@ -82,7 +82,7 @@ void setup() {
 
     /* start UART and server */
     Serial2.begin(UART_BAUDRATE);
-    Serial2.setRxBufferSize(BUFFER_SIZE);
+    Serial2.setRxBufferSize(UART_RX_BUFFER_SIZE);
 
     server.begin();
     server.setNoDelay(true);
@@ -135,7 +135,7 @@ void loop() {
                     Serial2.write(tmp);
                 }
             } else {
-                const auto len { std::min(static_cast<size_t>(serverClients[i].available()), 512U) };
+                const auto len { std::min(static_cast<size_t>(serverClients[i].available()), BUFFER_SIZE) };
                 serverClients[i].read(serial_tx_buf, len);
                 Serial2.write(serial_tx_buf, len);
             }
@@ -145,7 +145,7 @@ void loop() {
 
     /* check UART for data */
     if (Serial2.available()) {
-        const size_t len { std::min(static_cast<size_t>(Serial2.available()), 512U) };
+        const size_t len { std::min(static_cast<size_t>(Serial2.available()), BUFFER_SIZE) };
         Serial2.readBytes(serial_rx_buf, len);
         /* push UART data to all connected telnet clients */
         for (uint8_t i { 0 }; i < MAX_SRV_CLIENTS; ++i) {
