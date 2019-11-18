@@ -24,12 +24,16 @@
 
 #include "Arduino.h"
 #include "WiFi.h"
+#include "ESPmDNS.h"
+#include "WiFiUdp.h"
+#include "ArduinoOTA.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <cstddef>
 
 #include "config.h" // if config.h is missing, copy config.h.in to config.h and adjust for your wifi!
+
 
 static WiFiServer server { 23 };
 static WiFiClient serverClients[MAX_SRV_CLIENTS];
@@ -39,6 +43,9 @@ static HardwareSerial Serial0 { 0 };
 static HardwareSerial Serial2 { 2 };
 static uint8_t serial_rx_buf[BUFFER_SIZE];
 static uint8_t serial_tx_buf[BUFFER_SIZE];
+
+static ArduinoOTAClass ArduinoOTA;
+
 
 void setup() {
     Serial0.begin(115200);
@@ -77,6 +84,8 @@ void setup() {
     }
     // WiFi.setSleep(false);
     Serial0.println("WiFi connected.");
+    Serial0.print("OTA hostname: ");
+    Serial0.println(ota_host);
     Serial0.flush();
     Serial0.end();
 
@@ -86,7 +95,12 @@ void setup() {
 
     server.begin();
     server.setNoDelay(true);
+
+    /* enable OTA updates */
+    ArduinoOTA.setHostname(ota_host);
+    ArduinoOTA.begin();
 }
+
 
 void loop() {
     /* check if there are any new clients */
@@ -155,4 +169,7 @@ void loop() {
             }
         }
     }
+
+    /* check for OTA update */
+    ArduinoOTA.handle();
 }
