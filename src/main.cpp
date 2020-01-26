@@ -28,6 +28,7 @@
 #include "WiFiUdp.h"
 #include "ArduinoOTA.h"
 
+#include <esp_wifi.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstddef>
@@ -50,6 +51,11 @@ static ArduinoOTAClass ArduinoOTA;
 void setup() {
     Serial0.begin(115200);
     Serial0.println("ESP32 starting WiFi setup...");
+
+    WiFi.enableSTA(true);
+    WiFi.setAutoConnect(true);
+    WiFi.setAutoReconnect(true);
+    ::esp_wifi_set_ps(WIFI_PS_NONE);
 
     const auto wifi_status { WiFi.begin(ssid, password) };
 
