@@ -47,22 +47,23 @@ static uint8_t serial_tx_buf[BUFFER_SIZE];
 
 static ArduinoOTAClass ArduinoOTA;
 
-
 void setup() {
-    Serial0.begin(115200);
+    Serial0.begin(115'200);
     Serial0.println("ESP32 starting WiFi setup...");
+
+    ::btStop();
 
     WiFi.enableSTA(true);
     WiFi.setAutoConnect(true);
     WiFi.setAutoReconnect(true);
-    ::esp_wifi_set_ps(WIFI_PS_NONE);
+    ::esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 
     const auto wifi_status { WiFi.begin(ssid, password) };
 
     Serial0.print("WiFi status=");
     Serial0.println(wifi_status, 10);
 
-    for (uint8_t i { 0 }; WiFi.status() != WL_CONNECTED && i < 20; ++i) {
+    for (uint8_t i {}; WiFi.status() != WL_CONNECTED && i < 20; ++i) {
         Serial0.print("WiFi not connected... (");
         Serial0.print(i, 10);
         Serial0.print(") status=");
@@ -72,7 +73,7 @@ void setup() {
             Serial0.println("WiFi connect failed, rebooting...");
             Serial0.flush();
 
-            ::esp_sleep_enable_timer_wakeup(500000ULL);
+            ::esp_sleep_enable_timer_wakeup(500'000);
             ::esp_light_sleep_start();
             ::esp_restart();
         }
@@ -83,12 +84,12 @@ void setup() {
         Serial0.println(WiFi.status(), 10);
 
         while (true) {
-            ::esp_sleep_enable_timer_wakeup(1000000ULL);
+            ::esp_sleep_enable_timer_wakeup(1'000'000);
             ::esp_light_sleep_start();
             ::esp_restart();
         }
     }
-    // WiFi.setSleep(false);
+    
     Serial0.println("WiFi connected.");
     Serial0.print("OTA hostname: ");
     Serial0.println(ota_host);
@@ -111,7 +112,7 @@ void setup() {
 void loop() {
     /* check if there are any new clients */
     if (server.hasClient()) {
-        for (uint8_t i { 0 }; i < MAX_SRV_CLIENTS; ++i) {
+        for (uint8_t i {}; i < MAX_SRV_CLIENTS; ++i) {
             /* find free/disconnected spot */
             if (!serverClients[i].connected()) {
                 serverClients[i].stop();
@@ -138,7 +139,7 @@ void loop() {
     }
 
     /* check clients for data */
-    for (uint8_t i { 0 }; i < MAX_SRV_CLIENTS; ++i) {
+    for (uint8_t i {}; i < MAX_SRV_CLIENTS; ++i) {
         if (serverClients[i].connected() && serverClients[i].available()) {
             /* get data from the telnet client and push it to the UART */
             const uint32_t dt { ::millis() - connection_time[i] };
@@ -147,7 +148,7 @@ void loop() {
                 if (tmp == 0xff) {
                     /* discard telnet protocl traffic during the first second */
                     while (serverClients[i].available() < 2) {
-                        ::delay(0);
+                        ::yield();
                     }
                     serverClients[i].read();
                     serverClients[i].read();
@@ -160,7 +161,7 @@ void loop() {
                 Serial2.write(serial_tx_buf, len);
             }
         }
-        ::delay(0);
+        // ::yield();
     }
 
     /* check UART for data */
@@ -171,11 +172,13 @@ void loop() {
         for (uint8_t i { 0 }; i < MAX_SRV_CLIENTS; ++i) {
             if (serverClients[i].connected()) {
                 serverClients[i].write(serial_rx_buf, len);
-                ::delay(0);
+                // ::yield();
             }
         }
     }
 
     /* check for OTA update */
     ArduinoOTA.handle();
+
+    ::vTaskDelay(10 / portTICK_PERIOD_MS);
 }
