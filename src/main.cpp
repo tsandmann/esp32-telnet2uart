@@ -89,7 +89,7 @@ void setup() {
             ::esp_restart();
         }
     }
-    
+
     Serial0.println("WiFi connected.");
     Serial0.print("OTA hostname: ");
     Serial0.println(ota_host);
